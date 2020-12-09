@@ -11,3 +11,5 @@ TO WORK ON:
 Employee GUI Functionality
 
 Invoice GUI + Functionality
+
+(I use global variables... I know it's bad. I'll make changes once I finish the entire thing)
