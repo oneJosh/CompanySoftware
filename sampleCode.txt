@@ -1,0 +1,213 @@
+using System;
+using System.Data;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace CompanySoftware
+{
+
+
+    public partial class companySoftwareInventory : Form
+
+    {
+        public DataTable products;
+        public DataTable productsUpdated;
+
+        public companySoftwareInventory()
+        {
+            InitializeComponent();
+        }
+
+
+
+
+
+        private void exitStripImage_Click(object sender, EventArgs e)
+        {
+            System.Windows.Forms.Application.Exit();
+        }
+
+        private void companySoftware_Load(object sender, EventArgs e)
+        {
+            // TODO: This line of code loads data into the 'companyDataSet.Product' table. You can move, or remove it, as needed.
+            this.productTableAdapter.Fill(this.companyDataSet.Product);
+            dataGridView1.ReadOnly = true;
+            this.dataGridView1.CellBorderStyle = DataGridViewCellBorderStyle.None;
+
+
+
+            // FILL COMBO BOX
+            products = new DataTable();
+            productsUpdated = new DataTable();
+            products = this.companyDataSet.Product.Copy();
+            productsUpdated = this.companyDataSet.Product.Copy();
+            // used in other functions, ignore
+
+
+            for (int i = 0; i < products.Rows.Count; i++)
+            {
+                if (comboBox1.Items.Contains(products.Rows[i]["product_category"].ToString()))
+                {
+
+                }
+                else
+                {
+                    comboBox1.Items.Add(products.Rows[i]["product_category"].ToString());
+                }
+
+
+            }
+            // FILL COMBO BOX /END
+        }
+
+
+
+        private void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+
+            // CREATE TABLE COPIES, products for comparison, productsupdated to update table
+            productsUpdated.Clear(); // Clear data contents of update table
+            
+
+
+
+            String currentText = txtSearch.Text; // What is currently in the textbox
+
+            // As text changes, run this loop to find relevant product_names to the currentText var
+            for (int i = 0; i < products.Rows.Count; i++)
+            {
+                try
+                {
+                    String compare = products.Rows[i]["product_name"].ToString().Substring(0, currentText.Length).ToLower();
+                    if (compare.Contains(currentText.ToLower())) // compare
+                    {
+                        productsUpdated.ImportRow(products.Rows[i]);
+                    }
+                }
+                catch (ArgumentException exception)
+                {
+
+                }
+
+            }
+            dataGridView1.DataSource = productsUpdated; // Update Gridview with this
+
+
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            txtSearch.Clear();
+        }
+
+        private void btnSearchPrice_Click(object sender, EventArgs e)
+        {
+            productsUpdated.Clear();
+            productsUpdated = this.companyDataSet.Product.Copy();
+
+            double low = 0, high = 0;
+
+            if (String.IsNullOrEmpty(txtLowPrice.Text) && String.IsNullOrEmpty(txtHighPrice.Text))
+            {
+                MessageBox.Show("No values entered.", "Company Software", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+
+                Double.TryParse(txtLowPrice.Text, out low);
+                Double.TryParse(txtHighPrice.Text, out high);
+               
+                for (int i = 0; i < productsUpdated.Rows.Count; i++)
+                {
+                    try
+                    {
+                        double compare;
+                        double.TryParse(productsUpdated.Rows[i]["product_price"].ToString(), out compare);
+
+                        if (low == 0)
+                        {
+                            if (compare <= high) // This satisfies the condition that the item in the data table is within the range of item >= 0 && item <= high value
+                            {
+                                try // This second condition will only run if a specific product category is named. Otherwise, it won't run and the NullReferneceException will be ignored in the catch
+                                {
+                                    String text = comboBox1.SelectedItem.ToString();
+
+                                    if (!(productsUpdated.Rows[i]["product_category"].ToString().Equals(text))) // Second condition to check if item in database's category DOES NOT match one specified in combobox
+                                    {
+                                        productsUpdated.Rows[i].Delete();
+                                    }
+                                }
+                                catch (NullReferenceException exception) 
+                                {
+
+                                }
+                                
+           
+
+                            }
+                            else
+                            {
+                               productsUpdated.Rows[i].Delete();
+                            }
+
+                        }
+                        else if (high == 0)
+                        {
+                            if (compare >= low) // This satisfies the condition that the item in the data table is within the range of item >= low value
+                            {
+                                try // This second condition will only run if a specific product category is named. Otherwise, it won't run and the NullReferneceException will be ignored in the catch
+                                {
+                                    String text = comboBox1.SelectedItem.ToString();
+                                    if (!(productsUpdated.Rows[i]["product_category"].ToString().Equals(text))) // Second condition to check if item in database's category DOES NOT match one specified in combobox
+                                    {
+                                        productsUpdated.Rows[i].Delete();
+                                    }
+                                }
+                                catch (NullReferenceException exception) // Catch the error that is thrown when category is not specified
+                                {
+
+                                }
+                               
+                            }
+                            else
+                            {
+                                productsUpdated.Rows[i].Delete();
+                            }
+
+                        }
+                        else if (compare >= low && compare <= high) // Check if value is within the range between >= lowvalue && <= high value
+                        {
+
+                        }
+                        else
+                        {
+                            productsUpdated.Rows[i].Delete();
+                        }
+
+                    }
+                    catch (ArgumentException exception)
+                    {
+
+                    }
+                    catch (InvalidCastException exception) // debugging error catch, the only one that should be caught during run is argumentexception
+                    {
+
+                    }
+                    catch (DeletedRowInaccessibleException exception) // debugging error catch, the only one that should be caught during run is argumentexception
+                    {
+
+                    }
+                }
+            }
+            dataGridView1.DataSource = productsUpdated; // Update gridview with updated table
+            
+
+
+        }
+
+
+
+    }
+}
+
+
